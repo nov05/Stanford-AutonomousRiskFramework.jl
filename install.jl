@@ -28,6 +28,9 @@ packages = [
     PackageSpec(url="https://github.com/ancorso/POMDPGym.jl"),
     PackageSpec(url="https://github.com/ancorso/Crux.jl"),
     PackageSpec(url=joinpath(@__DIR__)),
+
+    ## Added by Nov05 2025-05-31
+    PackageSpec(url="https://github.com/nov05/Stanford-POMDPStressTesting.jl"),
 ]
 
 ci = haskey(ENV, "CI") && ENV["CI"] == "true"
