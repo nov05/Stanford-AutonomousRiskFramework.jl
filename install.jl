@@ -2,7 +2,7 @@ using Pkg
 
 packages = [
     # [deps] ObservationModel.jl
-    PackageSpec(url="https://github.com/sisl/AdversarialDriving.jl"),
+    PackageSpec(url="https://github.com/sisl/AdversarialDriving.jl"),     
     PackageSpec(url="https://github.com/sisl/Vec.jl"),
     PackageSpec(url=joinpath(@__DIR__, "ObservationModels.jl")),
 
@@ -31,6 +31,7 @@ packages = [
 
     ## Added by Nov05 2025-05-31
     PackageSpec(url="https://github.com/nov05/Stanford-POMDPStressTesting.jl"),
+    PackageSpec(url="https://github.com/nov05/Stanford-AutonomousRiskFramework.jl"),
 ]
 
 ci = haskey(ENV, "CI") && ENV["CI"] == "true"
@@ -53,6 +54,7 @@ if ci
     Conda.add("pytorch")
 end
 
+Pkg.add("cuDNN")   ## Nov05
 Pkg.add("MCTS")
 Pkg.add("D3Trees")
 Pkg.add("BSON")

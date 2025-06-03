@@ -344,38 +344,40 @@ train_nnet!(feat, y, net..., params);
 Cross Entropy Method
 """
 
-function POMDPStressTesting.cem_losses(d, sample; mdp::ASTMDP, initstate::ASTState)
-    sim = mdp.sim
-    
-    s = initstate
-    R = 0 # accumulated reward
-    
-    BlackBox.initialize!(sim)
-    AST.go_to_state(mdp, s)
+Base.@eval POMDPStressTesting begin  ## nov05
+    function POMDPStressTesting.cem_losses(d, sample; mdp::ASTMDP, initstate::ASTState)
+        sim = mdp.sim
+        
+        s = initstate
+        R = 0 # accumulated reward
+        
+        BlackBox.initialize!(sim)
+        AST.go_to_state(mdp, s)
 
-    # Dummy values for debugging, not used in logprob
-    tmp_norm = Normal(0.0, 5.0)
-    
+        # Dummy values for debugging, not used in logprob
+        tmp_norm = Normal(0.0, 5.0)
+        
 
-    sample_length = length(last(first(sample))) # get length of sample vector ("second" element in pair using "first" key)
+        sample_length = length(last(first(sample))) # get length of sample vector ("second" element in pair using "first" key)
 
-    # Compute reward
-    for i in 1:sample_length
-        env_sample = GrayBox.EnvironmentSample()
-        for k in keys(sample)
-            value = sample[k][i]
-            env_sample[k] = GrayBox.Sample(value, logpdf(tmp_norm, value))
+        # Compute reward
+        for i in 1:sample_length
+            env_sample = GrayBox.EnvironmentSample()
+            for k in keys(sample)
+                value = sample[k][i]
+                env_sample[k] = GrayBox.Sample(value, logpdf(tmp_norm, value))
+            end
+            a = ASTSampleAction(env_sample)
+            (s, r) = @gen(:sp, :r)(mdp, s, a)
+            R += r
+            if BlackBox.isterminal(mdp.sim)
+                break
+            end
         end
-        a = ASTSampleAction(env_sample)
-        (s, r) = @gen(:sp, :r)(mdp, s, a)
-        R += r
-        if BlackBox.isterminal(mdp.sim)
-            break
-        end
+
+        return -R # negative (loss)
     end
-
-    return -R # negative (loss)
-end
+end ## nov05
 
 ##############################################################################
 """

@@ -28,31 +28,33 @@ end
 Scene stepping for self-noise in SUT
 """
 
+Base.@eval AdversarialDriving begin 
 # Step the scene forward by one timestep and return the next state
-function AdversarialDriving.step_scene(mdp::AdversarialDriving.AdversarialDrivingMDP, s::Scene, actions::Vector{Disturbance}, rng::AbstractRNG = Random.GLOBAL_RNG)
-    entities = []
+    function AdversarialDriving.step_scene(mdp::AdversarialDriving.AdversarialDrivingMDP, s::Scene, actions::Vector{Disturbance}, rng::AbstractRNG = Random.GLOBAL_RNG)
+        entities = []
 
-    # Add noise in SUT
-    update_adversary!(sut(mdp), actions[1], s)
+        # Add noise in SUT
+        update_adversary!(sut(mdp), actions[1], s)
 
-    # Loop through the adversaries and apply the instantaneous aspects of their disturbance
-    for (adversary, action) in zip(adversaries(mdp), actions[2:end])
-        update_adversary!(adversary, action, s)
-    end
-
-    # Loop through the vehicles in the scene, apply action and add to next scene
-    for (i, veh) in enumerate(s)
-        m = model(mdp, veh.id)
-        observe!(m, s, mdp.roadway, veh.id)
-        if typeof(m.idm) <: MPCDriver
-            a = rand(rng, m, m.idm)
-        else
-            a = rand(rng, m)
+        # Loop through the adversaries and apply the instantaneous aspects of their disturbance
+        for (adversary, action) in zip(adversaries(mdp), actions[2:end])
+            update_adversary!(adversary, action, s)
         end
-        bv = Entity(propagate(veh, a, mdp.roadway, mdp.dt), veh.def, veh.id)
-        !end_of_road(bv, mdp.roadway, mdp.end_of_road) && push!(entities, bv)
+
+        # Loop through the vehicles in the scene, apply action and add to next scene
+        for (i, veh) in enumerate(s)
+            m = model(mdp, veh.id)
+            observe!(m, s, mdp.roadway, veh.id)
+            if typeof(m.idm) <: MPCDriver
+                a = rand(rng, m, m.idm)
+            else
+                a = rand(rng, m)
+            end
+            bv = Entity(propagate(veh, a, mdp.roadway, mdp.dt), veh.def, veh.id)
+            !end_of_road(bv, mdp.roadway, mdp.end_of_road) && push!(entities, bv)
+        end
+        isempty(entities) ? Scene(typeof(sut(mdp).get_initial_entity())) : Scene([entities...])
     end
-    isempty(entities) ? Scene(typeof(sut(mdp).get_initial_entity())) : Scene([entities...])
 end
 
 

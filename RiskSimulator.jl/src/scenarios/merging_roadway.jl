@@ -63,33 +63,33 @@ function hw_merging(; roadway::Roadway, id::Int64=1, noise::Noise=Noise(), s::Fl
     return (rng::AbstractRNG=Random.GLOBAL_RNG) -> vehicle
 end
 
-
-function AutomotiveSimulator.propagate(veh::Entity{BlinkerState, D, I}, action::BlinkerVehicleControl, roadway::Roadway, Δt::Float64) where {D,I}
-    # set the new goal
-    vs = veh.state.veh_state
-    if action.toggle_goal
-        gs = goals(veh)
-        curr_index = findfirst(gs .== laneid(veh))
-        @assert !isnothing(curr_index)
-        new_goal = gs[curr_index % length(gs) + 1]
-        if can_have_goal(veh, new_goal, roadway)
-            vs = set_lane(vs, new_goal, roadway)
+Base.@eval AutomotiveSimulator begin  ## nov05
+    function AutomotiveSimulator.propagate(veh::Entity{BlinkerState, D, I}, action::BlinkerVehicleControl, roadway::Roadway, Δt::Float64) where {D,I}
+        # set the new goal
+        vs = veh.state.veh_state
+        if action.toggle_goal
+            gs = goals(veh)
+            curr_index = findfirst(gs .== laneid(veh))
+            @assert !isnothing(curr_index)
+            new_goal = gs[curr_index % length(gs) + 1]
+            if can_have_goal(veh, new_goal, roadway)
+                vs = set_lane(vs, new_goal, roadway)
+            end
         end
+
+        # starting_lane = laneid(vs)  ## nov05
+
+        # Update the kinematics of the vehicle (don't allow v < 0)
+        vs_entity = Entity(vs, veh.def, veh.id)
+        vs = propagate(vs_entity, LaneFollowingAccel(action.a + action.da), roadway, Δt)
+
+        # Set the blinker state and return
+        new_blink = action.toggle_blinker ? !blinker(veh) : blinker(veh)
+        bs = BlinkerState(vs, new_blink, goals(veh), action.noise)
+        # @assert starting_lane == laneid(bs) # TODO: Merge into master.
+        bs
     end
-
-    starting_lane = laneid(vs)
-
-    # Update the kinematics of the vehicle (don't allow v < 0)
-    vs_entity = Entity(vs, veh.def, veh.id)
-    vs = propagate(vs_entity, LaneFollowingAccel(action.a + action.da), roadway, Δt)
-
-    # Set the blinker state and return
-    new_blink = action.toggle_blinker ? !blinker(veh) : blinker(veh)
-    bs = BlinkerState(vs, new_blink, goals(veh), action.noise)
-    # @assert starting_lane == laneid(bs) # TODO: Merge into master.
-    bs
-end
-
+end ## nov05
 
 # TODO: (kwargs...) for `t_intersection`
 # TODO: UrbanIDM???
